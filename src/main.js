@@ -432,6 +432,39 @@ ui.setPauseHandlers({
 game.reset();
 game.reticle.visible = false;
 
+// Ask start.ng again who's playing.
+//
+// The docs are explicit that this has to happen when the player returns to the
+// tab, not just at load: they may have signed in or out on start.ng while they
+// were away. Asking only once meant the game never noticed a sign-in, so the
+// "Sign in to save" button stayed there forever after you'd signed in.
+async function refreshPlayer() {
+  const { player } = await whoami();
+  if (!player) return;
+
+  const signedIn = Boolean(player.account);
+  const wasSignedIn = Boolean(startngPlayer && startngPlayer.account);
+
+  // Nothing has changed — leave the screen alone rather than rebuilding the
+  // grid under whoever is using it.
+  if (startngPlayer && signedIn === wasSignedIn && player.name === startngPlayer.name) {
+    return;
+  }
+
+  startngPlayer = player;
+  game.setPlayerStyle(safeStyle(startngPlayer.style));
+
+  // Only redraw the matchup if we're actually on it. Mid-match, the new
+  // character appears on the next penalty.
+  if (!started) showMatchup();
+}
+
+// Returning to the tab is the moment a sign-in will have taken effect.
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) refreshPlayer();
+});
+window.addEventListener('focus', refreshPlayer);
+
 // Ask start.ng who's playing, dress their character, then show the matchup.
 //
 // Outside start.ng — opened as a local file, or a plain preview — the connect

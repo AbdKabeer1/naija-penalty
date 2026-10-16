@@ -1,0 +1,8 @@
+{
+  "leaderboard": {
+    "stats": [
+      { "key": "goals", "label": "Penalties scored", "order": "highest" },
+      { "key": "saves", "label": "Penalties saved", "order": "highest" }
+    ]
+  }
+}

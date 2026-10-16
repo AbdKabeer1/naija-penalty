@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>StreetPK Naija — cover generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Outfit:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        gap: 20px;
+        background: #120d09;
+        color: #f5ead6;
+        font-family: Outfit, sans-serif;
+        text-align: center;
+        padding: 24px;
+      }
+      canvas {
+        width: min(90vw, 1000px);
+        height: auto;
+        border-radius: 12px;
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
+      }
+      button {
+        padding: 14px 34px;
+        border: 0;
+        border-radius: 999px;
+        background: linear-gradient(180deg, #16b56d, #008751);
+        color: #fff;
+        font-family: inherit;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      p {
+        max-width: 46ch;
+        line-height: 1.55;
+        opacity: 0.75;
+        font-size: 14px;
+        margin: 0;
+      }
+      code {
+        color: #ffd166;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="c" width="1600" height="1000"></canvas>
+    <button id="save">Download cover.png</button>
+    <p>
+      1600 × 1000 (16:10), the size start.ng recommends. Save it as
+      <code>cover.png</code> next to <code>index.html</code> — that's
+      <code>dist/cover.png</code> in this project — then commit and push.
+    </p>
+
+    <script>
+      // Draws the game's card picture: the same harmattan palette as the pitch,
+      // a goal silhouette, and the title. Regenerate by reloading and saving
+      // again if you want a different random ball or dust layout.
+      const c = document.getElementById('c');
+      const ctx = c.getContext('2d');
+      const W = c.width;
+      const H = c.height;
+
+      // ---- Sky: the same gradient the 3D scene uses ----
+      const sky = ctx.createLinearGradient(0, 0, 0, H);
+      sky.addColorStop(0.0, '#2c5a86');
+      sky.addColorStop(0.34, '#7fa8c9');
+      sky.addColorStop(0.56, '#d8cba6');
+      sky.addColorStop(0.74, '#e8b978');
+      sky.addColorStop(1.0, '#b8713c');
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, W, H);
+
+      // ---- Sun, low and hazy ----
+      const sunX = W * 0.74;
+      const sunY = H * 0.5;
+      const glow = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, H * 0.55);
+      glow.addColorStop(0, 'rgba(255,226,160,0.95)');
+      glow.addColorStop(0.35, 'rgba(255,196,120,0.35)');
+      glow.addColorStop(1, 'rgba(255,196,120,0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.beginPath();
+      ctx.arc(sunX, sunY, 62, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,241,205,0.92)';
+      ctx.fill();
+
+      // ---- Distant hills, flat and pale ----
+      ctx.fillStyle = 'rgba(150,124,92,0.55)';
+      ctx.beginPath();
+      ctx.moveTo(0, H * 0.66);
+      for (let x = 0; x <= W; x += W / 9) {
+        const peak = H * 0.66 - Math.sin(x * 0.0016) * 46 - Math.cos(x * 0.004) * 26;
+        ctx.lineTo(x, peak);
+      }
+      ctx.lineTo(W, H);
+      ctx.lineTo(0, H);
+      ctx.closePath();
+      ctx.fill();
+
+      // ---- Ground ----
+      const ground = ctx.createLinearGradient(0, H * 0.64, 0, H);
+      ground.addColorStop(0, '#9c8055');
+      ground.addColorStop(1, '#7a5c36');
+      ctx.fillStyle = ground;
+      ctx.fillRect(0, H * 0.66, W, H);
+
+      // Dust haze over the horizon line, so the hills sit back.
+      const haze = ctx.createLinearGradient(0, H * 0.6, 0, H * 0.74);
+      haze.addColorStop(0, 'rgba(240,214,168,0)');
+      haze.addColorStop(0.5, 'rgba(240,214,168,0.55)');
+      haze.addColorStop(1, 'rgba(240,214,168,0)');
+      ctx.fillStyle = haze;
+      ctx.fillRect(0, H * 0.58, W, H * 0.2);
+
+      // ---- The goal ----
+      const gx = W * 0.5;
+      const gw = W * 0.44;
+      const gh = H * 0.29;
+      const gy = H * 0.4;
+      const post = 15;
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+      ctx.lineWidth = post;
+      ctx.lineCap = 'round';
+
+      // Net, drawn first so the frame sits on top.
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,0.30)';
+      ctx.lineWidth = 2;
+      for (let x = gx - gw / 2; x <= gx + gw / 2; x += 34) {
+        ctx.beginPath();
+        ctx.moveTo(x, gy);
+        ctx.lineTo(x, gy + gh);
+        ctx.stroke();
+      }
+      for (let y = gy; y <= gy + gh; y += 34) {
+        ctx.beginPath();
+        ctx.moveTo(gx - gw / 2, y);
+        ctx.lineTo(gx + gw / 2, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      ctx.strokeStyle = '#f6f4ef';
+      ctx.lineWidth = post;
+      ctx.beginPath();
+      ctx.moveTo(gx - gw / 2, gy + gh);
+      ctx.lineTo(gx - gw / 2, gy);
+      ctx.lineTo(gx + gw / 2, gy);
+      ctx.lineTo(gx + gw / 2, gy + gh);
+      ctx.stroke();
+
+      // ---- The ball ----
+      const bx = W * 0.31;
+      const by = H * 0.78;
+      const br = 92;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(bx, by + br * 0.95, br * 1.25, br * 0.3, 0, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(30,20,12,0.3)';
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(bx, by, br, 0, Math.PI * 2);
+      ctx.fillStyle = '#f4f1e8';
+      ctx.fill();
+
+      // Classic panels, clipped to the ball.
+      ctx.clip();
+      ctx.fillStyle = '#22201c';
+      const panels = [
+        [0, 0, 34],
+        [-1, -0.72, 26],
+        [1, -0.72, 26],
+        [-1.05, 0.6, 26],
+        [1.05, 0.6, 26],
+        [0, 1.35, 22],
+      ];
+      for (const [px, py, pr] of panels) {
+        ctx.beginPath();
+        for (let i = 0; i < 5; i++) {
+          const a = (i / 5) * Math.PI * 2 - Math.PI / 2;
+          const x = bx + px * br + Math.cos(a) * pr;
+          const y = by + py * br + Math.sin(a) * pr;
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // ---- Title ----
+      // A dark band behind the text keeps it legible over the sky.
+      const band = ctx.createLinearGradient(0, H * 0.06, 0, H * 0.36);
+      band.addColorStop(0, 'rgba(10,14,12,0.82)');
+      band.addColorStop(1, 'rgba(10,14,12,0)');
+      ctx.fillStyle = band;
+      ctx.fillRect(0, 0, W, H * 0.4);
+
+      ctx.textAlign = 'center';
+
+      ctx.font = '900 168px "Archivo Black", sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = 'rgba(0,0,0,0.65)';
+      ctx.shadowBlur = 34;
+      ctx.shadowOffsetY = 8;
+      ctx.fillText('STREETPK', W * 0.5, H * 0.19);
+
+      ctx.font = '900 132px "Archivo Black", sans-serif';
+      const gold = ctx.createLinearGradient(0, H * 0.2, 0, H * 0.34);
+      gold.addColorStop(0, '#ffe9a8');
+      gold.addColorStop(1, '#e2571e');
+      ctx.fillStyle = gold;
+      ctx.fillText('NAIJA', W * 0.5, H * 0.33);
+
+      // Underline in the Naija green.
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+      ctx.fillStyle = '#008751';
+      ctx.fillRect(W * 0.5 - 210, H * 0.355, 420, 12);
+
+      ctx.font = '700 40px Outfit, sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.82)';
+      ctx.fillText('PENALTY SHOOTOUT', W * 0.5, H * 0.425);
+
+      // ---- Download ----
+      document.getElementById('save').addEventListener('click', () => {
+        c.toBlob((blob) => {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'cover.png';
+          a.click();
+          URL.revokeObjectURL(a.href);
+        }, 'image/png');
+      });
+    </script>
+  </body>
+</html>

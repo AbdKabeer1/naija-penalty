@@ -318,6 +318,39 @@ body {
   align-items: stretch;
 }
 
+/* The matchup: your card, a VS, their card. Centred rather than filling the
+   width, because two narrow cards with air around them reads better than two
+   wide ones shoved to the edges. */
+.menu-body.matchup {
+  justify-content: center;
+  align-items: stretch;
+  gap: clamp(10px, 2.5vw, 34px);
+}
+
+.matchup .profile {
+  flex: 1 1 0;
+  max-width: 330px;
+  min-width: 0;
+}
+
+.versus {
+  align-self: center;
+  flex: 0 0 auto;
+  font-family: var(--display);
+  font-size: clamp(18px, 2.4vw, 30px);
+  letter-spacing: 0.06em;
+  color: var(--gold);
+  opacity: 0.8;
+  text-shadow: 0 6px 24px rgba(0, 0, 0, 0.7);
+}
+
+/* The opposition's chip, in their colour rather than the player's green. */
+.opponent-chip {
+  background: rgba(200, 16, 46, 0.22);
+  color: #ff8fa3;
+  border-color: rgba(200, 16, 46, 0.5);
+}
+
 .profile {
   flex: 0 0 clamp(220px, 22vw, 280px);
   display: flex;
@@ -950,11 +983,21 @@ body {
 --------------------------------------------------------------------------- */
 
 @media (max-width: 860px) {
-  /* On a phone the panel sits above the grid as a compact card: face on the
-     left, name and account beside it, opponent underneath. The grid then gets
-     everything that's left, which is what people actually came here for. */
-  .menu-body {
+  /* On a phone the two cards stack, with the VS sitting between them. */
+  .menu-body.matchup {
     flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+  }
+
+  .matchup .profile {
+    flex: 0 0 auto;
+    max-width: none;
+  }
+
+  .versus {
+    align-self: center;
+    font-size: 15px;
   }
 
   .profile {
@@ -966,7 +1009,7 @@ body {
       'face name'
       'face account'
       'actions actions'
-      'opponent opponent';
+      'hint hint';
     gap: 2px 12px;
     align-items: center;
     padding: 12px;

@@ -98,8 +98,6 @@ function boardTable(entries, local, highlightId) {
 }
 
 export function createUI(root) {
-  let selected = null;
-  let squad = [];
   let difficulty = 'normal';
 
   // ---- HUD ---------------------------------------------------------------
@@ -180,25 +178,30 @@ export function createUI(root) {
     }
   }
 
-  // The profile panel sits beside the grid on wide screens and above it on
-  // phones, so you can always see what you've picked.
+  // The matchup: your character on one side, the opposition on the other.
   const profile = el('aside', { class: 'profile' });
-  const grid = el('div', { class: 'squad-grid' });
-  const body = el('div', { class: 'menu-body' }, [profile, grid]);
+  const opponentPanel = el('aside', { class: 'profile opponent-panel' });
+  const body = el('div', { class: 'menu-body matchup' }, [
+    profile,
+    el('div', { class: 'versus', text: 'VS' }),
+    opponentPanel,
+  ]);
   menu.appendChild(body);
 
   const footer = el('div', { class: 'menu-foot' });
   const startBtn = el('button', {
     class: 'btn btn-primary',
     text: 'Kick off',
-    disabled: 'true',
     onClick: () => {
       // The handler is attached in showMenu, because the menu is rebuilt on
       // every "play again" and a stale closure would fire the old game.
-      if (selected) menu._onStart(selected, difficulty);
+      menu._onStart(difficulty);
     },
   });
-  const selectedLine = el('div', { class: 'selected-line', text: 'No player selected' });
+  const selectedLine = el('div', {
+    class: 'selected-line',
+    text: 'Five penalties each way',
+  });
   footer.append(selectedLine, startBtn);
   menu.appendChild(footer);
   root.appendChild(menu);
@@ -244,89 +247,51 @@ export function createUI(root) {
         : el('div', { class: 'profile-signed-in', text: 'Scores saved to start.ng' }),
       el('p', {
         class: 'profile-hint-sub',
-        text: 'Pick who you are up against on the right.',
+        text: 'Five penalties each way. Kick off when ready.',
       })
     );
   }
 
-  function renderOpponent(player) {
-    const slot = profile.querySelector('.opponent-slot');
-    if (slot) slot.remove();
-    if (!player) return;
+  // The opposition card. No name and no roster any more — they're a fixed
+  // character, so the card shows who they are and what they do.
+  function renderOpponent(style) {
+    opponentPanel.innerHTML = '';
+    if (!style) return;
 
-    profile.append(
-      el('div', { class: 'opponent-slot' }, [
-        el('div', { class: 'opponent-label', text: 'Up against' }),
-        el('img', { class: 'opponent-face', src: safeFace(player, 120), alt: '' }),
-        el('div', { class: 'opponent-name', text: player.name }),
-        el('div', { class: 'opponent-club', text: player.club }),
-      ])
+    opponentPanel.append(
+      el('div', { class: 'profile-top' }, [
+        el('img', {
+          class: 'profile-face',
+          src: safeStyleFace(style, 320),
+          alt: 'Your opponent',
+        }),
+      ]),
+      el('div', { class: 'profile-you-label opponent-chip', text: 'Opponent' }),
+      el('div', { class: 'profile-first', text: 'Rovers' }),
+      el('div', { class: 'profile-last', text: 'Red and black' }),
+      el('p', {
+        class: 'profile-hint-sub',
+        text: 'They shoot five, then they keep five.',
+      })
     );
   }
 
-  function select(player) {
-    // `selected` is now the OPPOSITION, not the player you control — you're
-    // always your start.ng character.
-    selected = player;
-    selectedLine.textContent = `Up against ${player.name} · ${player.club}`;
-    startBtn.disabled = false;
-    renderOpponent(player);
-    for (const card of grid.children) {
-      card.classList.toggle('card-on', card.dataset.id === player.id);
-    }
-  }
-
-  function buildGrid() {
-    grid.innerHTML = '';
-
-    for (const p of squad) {
-      const card = el('button', {
-        class: `player-card${selected && selected.id === p.id ? ' card-on' : ''}`,
-        'data-id': p.id,
-        onClick: () => select(p),
-      });
-
-      const face = el('img', {
-        class: 'card-face',
-        src: safeFace(p, 160),
-        alt: '',
-        loading: 'lazy',
-      });
-
-      const swatch = el('div', { class: 'swatch' });
-      swatch.style.background = p.skinHex;
-
-      const num = el('div', { class: 'num', text: String(p.number) });
-      num.style.color = p.kitColors.trim;
-
-      const faceWrap = el('div', { class: 'face' }, [face, swatch, num]);
-      faceWrap.style.background = p.kitColors.shirt;
-
-      card.append(
-        faceWrap,
-        el('div', { class: 'card-name', text: p.firstName }),
-        el('div', { class: 'card-meta', text: `${p.age} · ${p.state}` }),
-        el('div', { class: 'card-state', text: p.club })
-      );
-      grid.appendChild(card);
-    }
-  }
+  // The roster grid, select() and buildGrid() used to live here. They're gone:
+  // you always play as your own start.ng character, so there is nothing to pick.
 
   return {
     // ---- Menu ----------------------------------------------------------
     //
     // `player` is who YOU are, from start.ng: their character, name and face.
-    // The roster grid is the opposition you choose to play against.
-    showMenu({ roster, player, onStart, onSignIn }) {
-      squad = roster;
+    showMenu({ player, opponentStyle, onStart, onSignIn }) {
       menu._onStart = onStart;
       menu._onSignIn = onSignIn;
       // Kept so "play again" can rebuild this screen without the caller having
       // to thread the player back through.
       menu._player = player;
-      buildGrid();
+      menu._opponentStyle = opponentStyle;
       renderYou(player, onSignIn);
-      renderOpponent(selected);
+      renderOpponent(opponentStyle);
       menu.classList.remove('hidden');
       hud.classList.add('hidden');
       summary.classList.add('hidden');
@@ -457,9 +422,7 @@ export function createUI(root) {
       shots,
       saves,
       faced,
-      playerName,
       playerId,
-      opponent,
       board,
       local,
       signedIn,
@@ -507,7 +470,6 @@ export function createUI(root) {
         el('div', { class: 'overlay-card' }, [
           el('div', { class: 'kicker', text: won ? 'You win' : 'Full time' }),
           el('h1', { class: 'title', text: won ? 'NAIJA CHAMPION' : 'SO CLOSE' }),
-          oppositeLine(playerName, opponent),
           el('div', { class: 'summary-rows' }, statLines),
           saveLine,
           board ? boardTable(board, local, playerId) : null,
@@ -517,8 +479,8 @@ export function createUI(root) {
             onClick: () => {
               summary.classList.add('hidden');
               this.showMenu({
-                roster: squad,
                 player: menu._player,
+                opponentStyle: menu._opponentStyle,
                 onStart: menu._onStart,
                 onSignIn: menu._onSignIn,
               });
@@ -532,15 +494,6 @@ export function createUI(root) {
   };
 }
 
-// "You vs Them", on the full-time card. Small, but it's the line that makes the
-// result feel like it was against somebody rather than against the computer.
-function oppositeLine(playerName, opponent) {
-  if (!opponent) return null;
-  return el('div', { class: 'summary-striker' }, [
-    el('img', { class: 'summary-face', src: safeFace(opponent, 160), alt: '' }),
-    el('div', {}, [
-      el('div', { class: 'summary-name', text: `${playerName} vs ${opponent.name}` }),
-      el('div', { class: 'summary-club', text: opponent.club }),
-    ]),
-  ]);
-}
+// The roster is gone, so `safeFace` and `makeFaceDataUrl` are unused here.
+// Kept because the start.ng-supplied `face` picture and our drawn fallback are
+// two different things, and a future game mode will want the drawn one again.

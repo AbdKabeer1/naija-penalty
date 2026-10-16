@@ -4,7 +4,6 @@ import { createWorld, PITCH } from './scene/world.js';
 import { createGoal } from './scene/goal.js';
 import { createBall } from './scene/ball.js';
 import { Shootout, PHASE, ZONES } from './game/shootout.js';
-import { buildSquad } from './data/players.js';
 import { createUI } from './ui/screens.js';
 import { sfx, unlockAudio } from './game/audio.js';
 import {
@@ -14,6 +13,7 @@ import {
   goToSignIn,
   safeStyle,
   DEFAULT_PLAYER,
+  OPPOSITION_STYLE,
 } from './services/startng.js';
 
 // ---------------------------------------------------------------------------
@@ -117,7 +117,6 @@ function setCameraTarget(name) {
 // ---------------------------------------------------------------------------
 
 const ui = createUI(document.getElementById('ui'));
-const squad = buildSquad();
 
 const game = new Shootout({
   scene,
@@ -189,9 +188,9 @@ const game = new Shootout({
             faced: event.faced,
             playerName: startngPlayer ? startngPlayer.name : 'You',
             playerId: startngPlayer ? startngPlayer.id : null,
-            opponent: selectedOpponent,
             board: entries,
             local,
+            signedIn,
             saved,
             onSignIn: () => goToSignIn(),
           });
@@ -355,8 +354,6 @@ let started = false;
 // Who you are on start.ng: their character, name and account name. Falls back
 // to the default guest look when the game is opened outside start.ng.
 let startngPlayer = null;
-// Who you're up against, chosen from the roster.
-let selectedOpponent = null;
 let boardEntries = [];
 let boardLocal = true;
 
@@ -369,27 +366,19 @@ async function refreshBoard() {
   return { entries, local: !ok };
 }
 
-// The matchup screen: your character on one side, the opposition on the other.
+// The matchup screen: your character, the opposition, and difficulty.
 function showMatchup() {
-  // Default to a random opponent so there is always someone to play, and the
-  // grid below lets you pick a different one.
-  if (!selectedOpponent) {
-    selectedOpponent = squad[Math.floor(Math.random() * squad.length)];
-  }
-  game.setOpposition(selectedOpponent);
+  game.setOpposition(safeStyle(OPPOSITION_STYLE));
 
   ui.showMenu({
-    roster: squad,
     player: startngPlayer,
-    onStart: (opponent, difficulty) => startGame(opponent, difficulty),
+    opponentStyle: safeStyle(OPPOSITION_STYLE),
+    onStart: (difficulty) => startGame(difficulty),
     onSignIn: () => goToSignIn(),
   });
 }
 
-function startGame(opponent, difficulty) {
-  if (opponent) selectedOpponent = opponent;
-  if (selectedOpponent) game.setOpposition(selectedOpponent);
-
+function startGame(difficulty) {
   game.setDifficulty(difficulty);
   game.reset();
   game.beginMatch();

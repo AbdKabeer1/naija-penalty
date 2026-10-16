@@ -40,6 +40,9 @@ export const DIFFICULTY = {
   tough: { key: 'tough', label: 'Tough', reach: 0.95, delay: 0.04, centre: 0.09 },
 };
 
+// Keepers wear yellow. It's the one bit of kit that isn't anyone's choice.
+const KEEPER_KIT = { shirt: '#f0c419', trim: '#1a1a1a' };
+
 // The six zones, shared by the shooter's aim and the keeper's dive so the two
 // halves of the game reason about the goal the same way.
 export const ZONES = [
@@ -197,32 +200,29 @@ export class Shootout {
     return this.playerKickerFig;
   }
 
-  // The team you're up against. Supplies the keeper you shoot at, and the player
-  // who steps up when you're the one in goal.
-  setOpposition(player) {
-    this.opposition = player;
+  // The opposition.
+  //
+  // There is no roster any more. They're a character built from the same style
+  // shape as the player's, so they dress through exactly the same code path —
+  // just in a contrasting kit, with the keeper in the usual yellow.
+  setOpposition(style) {
+    this.oppositionStyle = style;
 
-    const keeper = this._swapFigure(
+    this._swapFigure(
       'keeperFig',
       createFigure({
-        skinHex: player.skinHex,
-        shirtHex: '#f0c419',
-        trimHex: '#1a1a1a',
+        skinHex: style.skinColor,
+        shirtHex: KEEPER_KIT.shirt,
+        trimHex: KEEPER_KIT.trim,
+        hairHex: style.hairColor,
+        hair: style.hair,
         isKeeper: true,
         number: 1,
       })
     );
     this._placeKeeper();
 
-    if (keeper === null) return;
-
-    // The AI taker, built now and swapped in when the keeping half starts.
-    this.aiTakerFig = createFigure({
-      skinHex: player.skinHex,
-      shirtHex: player.kitColors.shirt,
-      trimHex: player.kitColors.trim,
-      number: player.number,
-    });
+    this.aiTakerFig = createFigureFromStyle(style, { number: 9 });
     this.aiTakerFig.root.position.set(0, 0, PITCH.penaltySpot + 1.7);
     this.aiTakerFig.root.rotation.y = Math.PI;
   }

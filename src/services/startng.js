@@ -136,6 +136,23 @@ export const DEFAULT_PLAYER = {
   face: null,
 };
 
+// Who you're playing against.
+//
+// There's no roster: the opposition is one fixed character, dressed through the
+// same code path as the player's so it inherits hats, hair and accessories
+// without needing art of its own. Red and black, because it has to be obviously
+// not you whatever colours the player picked.
+export const OPPOSITION_STYLE = {
+  body: 'male',
+  primaryColor: '#c8102e',
+  secondaryColor: '#1a1a1a',
+  skinColor: '#6B3F22',
+  hairColor: '#17120f',
+  hair: 'afro',
+  hat: 'none',
+  accessory: 'none',
+};
+
 // start.ng may add options later, so anything unrecognised falls back rather
 // than drawing nothing.
 const HAIR_VALUES = ['short', 'afro', 'braids', 'bun', 'ponytail', 'dreads', 'bald'];
